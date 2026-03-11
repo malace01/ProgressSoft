@@ -7,6 +7,12 @@ import jakarta.validation.constraints.Pattern;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
+/**
+ * Normalized representation of one CSV row before persistence.
+ *
+ * <p>Bean validation is applied after parsing so business-quality errors can be accumulated
+ * and reported with row numbers instead of failing the whole file early.</p>
+ */
 public record DealRequest(
         @NotBlank(message = "Deal unique id is required")
         String dealUniqueId,
