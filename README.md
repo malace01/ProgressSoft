@@ -1,30 +1,31 @@
 # FX Deals Warehouse - ProgressSoft Assignment
 
-Spring Boot service that imports FX deal records from CSV into PostgreSQL for analytics.
+A clean, production-style Spring Boot service that imports FX deal records from CSV into PostgreSQL for analytics workloads.
 
-## Implemented Requirements
+## ✅ What is already implemented
 
-- Accept deal details and persist to database.
-- Validate row structure and field formats.
-- Prevent duplicate imports based on **Deal Unique Id**.
-- Process row-by-row so valid rows are saved even when some rows fail.
-- Actual DB support with PostgreSQL.
-- Docker Compose deployment.
-- Maven project with tests and coverage report.
-- Structured exception handling and logging.
-- Makefile for common commands.
+- CSV upload endpoint for bulk deal ingestion.
+- Row-level validation (format, required fields, amount, ISO currency shape).
+- Duplicate protection using **Deal Unique Id** as the persisted key.
+- Fault-tolerant import flow: valid rows are saved even if some rows fail.
+- Header-row detection (standard assignment-style header is ignored when present).
+- PostgreSQL-backed persistence (plus H2 for tests).
+- Docker Compose setup for one-command local environment.
+- Unit + controller tests, with JaCoCo report generation.
+- Global exception handling with consistent JSON error responses.
+- Makefile shortcuts for common developer tasks.
 
-## Tech Stack
+## Stack
 
 - Java 17
 - Spring Boot 3.3
-- Spring Web + Spring Data JPA + Validation
+- Spring Web, Spring Data JPA, Bean Validation
 - PostgreSQL
-- JUnit 5 + Mockito + MockMvc
+- JUnit 5, Mockito, MockMvc
 
-## Input Format (CSV)
+## CSV input contract
 
-Each row must contain exactly 5 columns in order:
+Each deal row must have exactly 5 columns in this order:
 
 1. Deal Unique Id
 2. From Currency ISO Code (ordering currency)
@@ -32,9 +33,11 @@ Each row must contain exactly 5 columns in order:
 4. Deal Timestamp (ISO-8601 with offset, e.g. `2024-06-01T09:00:00+00:00`)
 5. Deal Amount in ordering currency
 
-Example available at: `sample/deals.csv`
+Example file: `sample/deals.csv`
 
-## Run Locally
+> Tip: a first-row header matching the above assignment labels is accepted and skipped.
+
+## Run locally
 
 ```bash
 make test
@@ -61,7 +64,7 @@ make docker-down
 
 `POST /api/deals/import` (multipart/form-data)
 
-- Form field name: `file`
+- Field name: `file`
 
 Example:
 
@@ -70,7 +73,7 @@ curl -X POST http://localhost:8080/api/deals/import \
   -F "file=@sample/deals.csv"
 ```
 
-Sample response:
+### Success response shape
 
 ```json
 {
@@ -82,12 +85,12 @@ Sample response:
 }
 ```
 
-## Notes on Duplicate Handling
+## Duplicate handling behavior
 
 - `deal_unique_id` is the primary key.
-- Existing IDs are skipped and counted as duplicates.
+- Existing IDs are skipped and counted under `duplicateRows`.
 
-## Test Coverage
+## Test coverage
 
 Run:
 
@@ -95,6 +98,15 @@ Run:
 mvn clean test
 ```
 
-Coverage HTML report generated at:
+Coverage report:
 
 `target/site/jacoco/index.html`
+
+## Submission readiness checklist
+
+- [x] Functional requirements implemented.
+- [x] Defensive validation and duplicate handling in place.
+- [x] Containerized runtime provided.
+- [x] Tests included.
+- [ ] CI-based build verification from a network-enabled environment.
+- [ ] Optional polish: add API contract docs (OpenAPI) and import metrics endpoint.

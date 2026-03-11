@@ -31,6 +31,28 @@ class DealImportServiceTest {
         dealImportService = new DealImportService(dealRepository, validator);
     }
 
+
+    @Test
+    void shouldIgnoreHeaderRowWhenPresent() {
+        String csv = String.join("\n",
+                "Deal Unique Id,From Currency ISO Code,To Currency ISO Code,Deal Timestamp,Deal Amount in ordering currency",
+                "D1,USD,EUR,2024-01-01T10:15:30+00:00,1200.55",
+                "D2,GBP,JPY,2024-01-01T10:15:30+00:00,75.25");
+
+        when(dealRepository.existsById("D1")).thenReturn(false);
+        when(dealRepository.existsById("D2")).thenReturn(false);
+        when(dealRepository.save(any(Deal.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        MockMultipartFile file = new MockMultipartFile("file", "deals.csv", "text/csv", csv.getBytes());
+        ImportResult result = dealImportService.importDeals(file);
+
+        assertThat(result.totalRows()).isEqualTo(2);
+        assertThat(result.importedRows()).isEqualTo(2);
+        assertThat(result.duplicateRows()).isZero();
+        assertThat(result.invalidRows()).isZero();
+        assertThat(result.errors()).isEmpty();
+        verify(dealRepository, times(2)).save(any(Deal.class));
+    }
     @Test
     void shouldImportValidRowsAndSkipDuplicatesAndInvalidRows() {
         String csv = String.join("\n",
