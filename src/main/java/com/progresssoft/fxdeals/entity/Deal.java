@@ -7,6 +7,12 @@ import jakarta.persistence.Table;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 
+/**
+ * Persisted FX deal entity.
+ *
+ * <p>The business identifier is the primary key to enforce import idempotency at the database
+ * level in addition to service-side duplicate checks.</p>
+ */
 @Entity
 @Table(name = "deals")
 public class Deal {

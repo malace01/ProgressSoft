@@ -26,6 +26,12 @@ import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+/**
+ * Imports FX deals from CSV while collecting row-level outcomes.
+ *
+ * <p>The method intentionally continues after per-row failures so one bad line does not block
+ * ingestion of valid deals in the same upload.</p>
+ */
 @Service
 public class DealImportService {
 
@@ -41,6 +47,7 @@ public class DealImportService {
     }
 
     public ImportResult importDeals(MultipartFile file) {
+        // We fail fast on missing/empty input because there is no recoverable per-row work to do.
         if (file == null || file.isEmpty()) {
             throw new BadRequestException("CSV file is required and cannot be empty");
         }
@@ -59,10 +66,13 @@ public class DealImportService {
             boolean firstDataLineChecked = false;
             while ((line = reader.readLine()) != null) {
                 rowNumber++;
+                // Blank rows are ignored rather than treated as invalid to be user-friendly with edited CSV files.
                 if (line.isBlank()) {
                     continue;
                 }
 
+                // Header detection is intentionally applied once to avoid accidentally skipping valid data rows
+                // that happen to contain similar values later in the file.
                 if (!firstDataLineChecked) {
                     firstDataLineChecked = true;
                     if (isHeaderRow(line)) {
@@ -94,6 +104,7 @@ public class DealImportService {
                     invalidRows++;
                     errors.add(new ImportError(rowNumber, ex.getMessage()));
                 } catch (DataIntegrityViolationException ex) {
+                    // This fallback preserves idempotency when concurrent imports race between existsById and save.
                     duplicateRows++;
                     logger.info("Skipping deal because of constraint violation at row={} error={}", rowNumber, ex.getMessage());
                 }
@@ -144,6 +155,7 @@ public class DealImportService {
 
     private List<String> validate(DealRequest request) {
         Set<ConstraintViolation<DealRequest>> violations = validator.validate(request);
+        // Sorting ensures deterministic error output, which improves test stability and API usability.
         return violations.stream()
                 .map(ConstraintViolation::getMessage)
                 .sorted(Comparator.naturalOrder())

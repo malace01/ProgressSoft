@@ -7,6 +7,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+/**
+ * Centralized exception translation layer.
+ *
+ * <p>Keeping this logic global avoids repeating response-shaping code in each controller and
+ * guarantees consistent payloads across endpoints.</p>
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
