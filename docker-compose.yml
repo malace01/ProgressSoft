@@ -1,0 +1,27 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: fx-postgres
+    environment:
+      POSTGRES_DB: fx_deals
+      POSTGRES_USER: fx_user
+      POSTGRES_PASSWORD: fx_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  app:
+    build: .
+    container_name: fx-deals-app
+    depends_on:
+      - postgres
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/fx_deals
+      SPRING_DATASOURCE_USERNAME: fx_user
+      SPRING_DATASOURCE_PASSWORD: fx_password
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres_data:
