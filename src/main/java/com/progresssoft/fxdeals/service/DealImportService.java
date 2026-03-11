@@ -56,10 +56,19 @@ public class DealImportService {
 
             String line;
             int rowNumber = 0;
+            boolean firstDataLineChecked = false;
             while ((line = reader.readLine()) != null) {
                 rowNumber++;
                 if (line.isBlank()) {
                     continue;
+                }
+
+                if (!firstDataLineChecked) {
+                    firstDataLineChecked = true;
+                    if (isHeaderRow(line)) {
+                        logger.debug("Detected CSV header at row={}, skipping it", rowNumber);
+                        continue;
+                    }
                 }
 
                 totalRows++;
@@ -118,6 +127,19 @@ public class DealImportService {
         } catch (NumberFormatException ex) {
             throw new BadRequestException("Invalid deal amount format");
         }
+    }
+
+    private boolean isHeaderRow(String line) {
+        String[] columns = line.split(",", -1);
+        if (columns.length != EXPECTED_COLUMNS) {
+            return false;
+        }
+
+        return "deal unique id".equalsIgnoreCase(columns[0].trim())
+                && "from currency iso code".equalsIgnoreCase(columns[1].trim())
+                && "to currency iso code".equalsIgnoreCase(columns[2].trim())
+                && "deal timestamp".equalsIgnoreCase(columns[3].trim())
+                && "deal amount in ordering currency".equalsIgnoreCase(columns[4].trim());
     }
 
     private List<String> validate(DealRequest request) {
